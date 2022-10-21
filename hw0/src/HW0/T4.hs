@@ -5,7 +5,7 @@ import Numeric.Natural (Natural)
 
 
 repeat' :: a -> [a]             -- behaves like Data.List.repeat
-repeat' = fix (\rec a -> a : rec a)
+repeat' x = fix (x:)
 map' :: (a -> b) -> [a] -> [b]  -- behaves like Data.List.map
 map' = fix (\rec f arr -> if null arr then [] else f (head arr) : rec f (tail arr))
 fib :: Natural -> Natural       -- computes the n-th Fibonacci number
