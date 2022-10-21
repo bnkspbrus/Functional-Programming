@@ -21,4 +21,6 @@ compose = s (k s) k
 contract :: (a -> a -> b) -> (a -> b)
 contract = s s (k i)
 
+permute :: (a -> b -> c) -> (b -> a -> c)
+permute = s (s (k s) (s (s (k s) (s (k k) (k s))) (s (k k) (s k k)))) (k k)
 
