@@ -13,7 +13,6 @@ author:         Barsukov Nikita
 maintainer:     bnkspbrus@gmail.com
 copyright:      2022 Barsukov Nikita
 license:        BSD3
-license-file:   LICENSE
 build-type:     Simple
 extra-source-files:
     README.md
