@@ -1,4 +1,13 @@
-module HW0.T5 where
+module HW0.T5
+  ( Nat,
+    nz,
+    ns,
+    nplus,
+    nmult,
+    nFromNatural,
+    nToNum,
+  )
+where
 
 import Numeric.Natural
 
@@ -12,6 +21,7 @@ ns nat f a = f (nat f a)
 
 nplus :: Nat a -> Nat a -> Nat a
 nplus nat1 nat2 f = nat1 f . nat2 f
+
 nmult :: Nat a -> Nat a -> Nat a
 nmult nat1 nat2 f = nat1 (nat2 f)
 

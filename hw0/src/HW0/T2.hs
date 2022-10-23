@@ -1,13 +1,20 @@
-module HW0.T2 where
+module HW0.T2
+  ( Not,
+    doubleNeg,
+    reduceTripleNeg,
+  )
+where
 
 import Data.Void
-
 
 type Not a = a -> Void
 
 doubleNeg :: a -> Not (Not a)
 doubleNeg a = f
-  where f g = g a
+  where
+    f g = g a
+
 reduceTripleNeg :: Not (Not (Not a)) -> Not a
 reduceTripleNeg f = g
-  where g a = f (doubleNeg a)
+  where
+    g a = f (doubleNeg a)
