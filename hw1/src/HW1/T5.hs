@@ -1,6 +1,11 @@
-module HW1.T5 where
+module HW1.T5
+  ( splitOn,
+    joinWith,
+  )
+where
 
 import qualified Data.List.NonEmpty as N
+
 --import Prelude hiding (head, tail)
 
 splitOn :: Eq a => a -> [a] -> N.NonEmpty [a]
