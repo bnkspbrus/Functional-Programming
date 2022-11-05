@@ -52,9 +52,9 @@ instance Fractional Expr where
 
 eval :: Expr -> State [Prim Double] Double
 eval (Val x) = pure x
-eval (Op (Add x y)) = do a <- eval x; b <- eval y; S {runS = \s -> (a + b) :# Add a b : s}
-eval (Op (Sub x y)) = do a <- eval x; b <- eval y; S {runS = \s -> (a - b) :# Sub a b : s}
-eval (Op (Mul x y)) = do a <- eval x; b <- eval y; S {runS = \s -> (a * b) :# Mul a b : s}
-eval (Op (Div x y)) = do a <- eval x; b <- eval y; S {runS = \s -> (a / b) :# Div a b : s}
-eval (Op (Abs x)) = do a <- eval x; S {runS = \s -> abs a :# Abs a : s}
-eval (Op (Sgn x)) = do a <- eval x; S {runS = \s -> signum a :# Sgn a : s}
+eval (Op (Add x y)) = do a <- eval x; b <- eval y; modifyState (Add a b :); return (a + b)
+eval (Op (Sub x y)) = do a <- eval x; b <- eval y; modifyState (Sub a b :); return (a - b)
+eval (Op (Mul x y)) = do a <- eval x; b <- eval y; modifyState (Mul a b :); return (a * b)
+eval (Op (Div x y)) = do a <- eval x; b <- eval y; modifyState (Div a b :); return (a / b)
+eval (Op (Abs x)) = do a <- eval x; modifyState (Abs a :); return (abs a)
+eval (Op (Sgn x)) = do a <- eval x; modifyState (Sgn a :); return (signum a)
