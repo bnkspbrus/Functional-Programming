@@ -6,7 +6,7 @@ data Pair a = P a a
 
 data Quad a = Q a a a a
 
-data Annotated e a = a :# e
+data Annotated e a = a :# e deriving Show
 
 infix 0 :#
 
