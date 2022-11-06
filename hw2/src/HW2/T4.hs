@@ -1,12 +1,12 @@
 module HW2.T4 where
 
-import qualified Control.Monad
-import HW2.T1
+import qualified Control.Monad (ap)
+import HW2.T1 (Annotated ((:#)), mapAnnotated)
 
 data State s a = S {runS :: s -> Annotated s a}
 
 mapState :: (a -> b) -> State s a -> State s b
-mapState f S {runS = rs} = S {runS = \s -> let (a :# ns) = rs s in f a :# ns}
+mapState f S {runS = rs} = S {runS = mapAnnotated f . rs}--let (a :# ns) = rs s in f a :# ns}
 
 wrapState :: a -> State s a
 wrapState a = S {runS = (a :#)}
