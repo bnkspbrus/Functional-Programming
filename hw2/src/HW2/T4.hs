@@ -36,7 +36,7 @@ data Prim a
   | Sgn a -- signum
   deriving (Show)
 
-data Expr = Val Double | Op (Prim Expr)
+data Expr = Val Double | Op (Prim Expr) deriving Show
 
 instance Num Expr where
   x + y = Op (Add x y)
@@ -51,10 +51,10 @@ instance Fractional Expr where
   fromRational x = Val (fromRational x)
 
 eval :: Expr -> State [Prim Double] Double
-eval (Val x) = pure x
+eval (Val x)        = pure x
 eval (Op (Add x y)) = do a <- eval x; b <- eval y; modifyState (Add a b :); return (a + b)
 eval (Op (Sub x y)) = do a <- eval x; b <- eval y; modifyState (Sub a b :); return (a - b)
 eval (Op (Mul x y)) = do a <- eval x; b <- eval y; modifyState (Mul a b :); return (a * b)
 eval (Op (Div x y)) = do a <- eval x; b <- eval y; modifyState (Div a b :); return (a / b)
-eval (Op (Abs x)) = do a <- eval x; modifyState (Abs a :); return (abs a)
-eval (Op (Sgn x)) = do a <- eval x; modifyState (Sgn a :); return (signum a)
+eval (Op (Abs x))   = do a <- eval x; modifyState (Abs a :); return (abs a)
+eval (Op (Sgn x))   = do a <- eval x; modifyState (Sgn a :); return (signum a)

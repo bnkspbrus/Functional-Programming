@@ -17,7 +17,7 @@ joinExceptState :: ExceptState e s (ExceptState e s a) -> ExceptState e s a
 joinExceptState es =
   ES
     { runES = \s -> case runES es s of
-        (Error e) -> Error e
+        (Error e)             -> Error e
         (Success (es2 :# ns)) -> runES es2 ns
     }
 

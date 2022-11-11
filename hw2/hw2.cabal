@@ -30,6 +30,7 @@ library
       HW2.T3
       HW2.T4
       HW2.T5
+      HW2.T6
   other-modules:
       Paths_hw2
   hs-source-dirs:

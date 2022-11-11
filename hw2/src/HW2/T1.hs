@@ -10,7 +10,7 @@ data Annotated e a = a :# e deriving Show
 
 infix 0 :#
 
-data Except e a = Error e | Success a
+data Except e a = Error e | Success a deriving Show
 
 data Prioritised a = Low a | Medium a | High a
 
@@ -27,7 +27,7 @@ data Fun i a = F (i -> a)
 data Tree a = Leaf | Branch (Tree a) a (Tree a)
 
 mapOption :: (a -> b) -> (Option a -> Option b)
-mapOption _ None = None
+mapOption _ None     = None
 mapOption f (Some a) = Some (f a)
 
 mapPair :: (a -> b) -> (Pair a -> Pair b)
@@ -40,24 +40,24 @@ mapAnnotated :: (a -> b) -> (Annotated e a -> Annotated e b)
 mapAnnotated f (a :# e) = f a :# e
 
 mapExcept :: (a -> b) -> (Except e a -> Except e b)
-mapExcept _ (Error e) = Error e
+mapExcept _ (Error e)   = Error e
 mapExcept f (Success a) = Success (f a)
 
 mapPrioritised :: (a -> b) -> (Prioritised a -> Prioritised b)
-mapPrioritised f (Low a) = Low (f a)
+mapPrioritised f (Low a)    = Low (f a)
 mapPrioritised f (Medium a) = Medium (f a)
-mapPrioritised f (High a) = High (f a)
+mapPrioritised f (High a)   = High (f a)
 
 mapStream :: (a -> b) -> (Stream a -> Stream b)
 mapStream f (x :> xs) = f x :> mapStream f xs
 
 mapList :: (a -> b) -> (List a -> List b)
-mapList _ Nil = Nil
+mapList _ Nil       = Nil
 mapList f (x :. xs) = f x :. mapList f xs
 
 mapFun :: (a -> b) -> (Fun i a -> Fun i b)
 mapFun f (F g) = F (f . g)
 
 mapTree :: (a -> b) -> (Tree a -> Tree b)
-mapTree _ Leaf = Leaf
+mapTree _ Leaf           = Leaf
 mapTree f (Branch l a r) = Branch (mapTree f l) (f a) (mapTree f r)
