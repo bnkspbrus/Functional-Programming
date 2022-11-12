@@ -4,14 +4,13 @@
 module HW2.T6 where
 
 import Control.Applicative
-import Control.Monad (MonadPlus, guard, void)
-import qualified Data.Char
-import GHC.Natural
-import HW2.T1 (Annotated ((:#)), Except (..))
+import Control.Monad (MonadPlus, guard, mfilter, void)
+import Data.Char
+import GHC.Float.RealFracMethods (int2Double)
+import GHC.Natural (Natural)
+import HW2.T1 (Annotated ((:#)), Except (..), mapExcept)
 import HW2.T4 (Expr (..))
 import HW2.T5 (ExceptState (ES), runES)
-import Data.Char (digitToInt)
-import GHC.Float.RealFracMethods (int2Double)
 
 data ParseError = ErrorAtPos Natural deriving (Show)
 
@@ -30,6 +29,33 @@ pChar = P $
     case s of
       []       -> Error (ErrorAtPos pos)
       (c : cs) -> Success (c :# (pos + 1, cs))
+
+peekChar :: Parser Char
+peekChar = peekP pChar
+
+peekP :: Parser a -> Parser a
+peekP p = P $ ES $ \s@(_, str) -> mapExcept (:# s) (runP p str)
+
+pInt :: Parser Int
+pInt = do
+  int <- some (mfilter isDigit pChar)
+  return (parseInt int)
+
+parseInt :: String -> Int
+parseInt str =  foldl (\acc x -> acc * 10 + x) 0 (map digitToInt str)
+
+pFrac :: Parser Double
+pFrac = do
+  frac <- some (mfilter isDigit pChar)
+  return $ let int = int2Double (parseInt frac) in foldr (\_ acc -> acc / 10) int frac
+
+pNumber :: Parser Double
+pNumber = do
+  int <- pInt
+  dot <- optional pChar
+  case dot of
+    (Just '.') -> do frac <- pFrac; return (int2Double int + frac)
+    _          -> return (int2Double int)
 
 parseError :: Parser a
 parseError = P (ES $ \(pos, _) -> Error (ErrorAtPos pos))
@@ -65,59 +91,40 @@ pEof = P $
 len :: [a] -> Natural
 len = foldr (\_ acc -> acc + 1) 0
 
-pSkipWhitespaces :: Parser ()
-pSkipWhitespaces = P $ ES $ \s -> Success (() :# skipWhitespaces s)
-
-skipWhitespaces :: (Natural, String) -> (Natural, String)
-skipWhitespaces (pos, str) = let (f, s) = span Data.Char.isSpace str in (pos + len f, s)
+pWhitespaces :: Parser ()
+pWhitespaces = void (many (mfilter isSpace pChar))
 
 data Token = PLUS | MINUS | STAR | SLASH | NUMBER | OBRACKET | CBRACKET | END deriving (Eq)
 
 curToken :: Parser Token
 curToken =
   do
-    pSkipWhitespaces
-    P $ ES $ \s -> getToken s
+    c <- optional peekChar
+    case c of
+      (Just v) ->
+        case v of
+          '+' -> return PLUS
+          '-' -> return MINUS
+          '*' -> return STAR
+          '/' -> return SLASH
+          '(' -> return OBRACKET
+          ')' -> return CBRACKET
+          _   -> if isDigit v then return NUMBER else parseError
+      Nothing -> return END
 
-getToken :: (Natural, String) -> Except ParseError (Annotated (Natural, String) Token)
-getToken s@(pos, str)
-  | null str = Success (END :# s)
-  | otherwise = case head str of
-    '+' -> Success (PLUS :# s)
-    '-' -> Success (MINUS :# s)
-    '*' -> Success (STAR :# s)
-    '/' -> Success (SLASH :# s)
-    '(' -> Success (OBRACKET :# s)
-    ')' -> Success (CBRACKET :# s)
-    _   -> if Data.Char.isDigit (head str) then Success (NUMBER :# s) else Error (ErrorAtPos pos)
+nextToken :: Parser ()
+nextToken = do skipCurToken; pWhitespaces
 
-nextToken :: Parser String
-nextToken =
+skipCurToken :: Parser ()
+skipCurToken =
   do
-    pSkipWhitespaces
-    P $ ES getText
-
-getText :: (Natural, String) -> Except ParseError (Annotated (Natural, String) String)
-getText s@(pos, str)
-  | null str = Success ("" :# s)
-  | head str `elem` ['+', '-', '*', '/', '(', ')'] = Success ([head str] :# (pos + 1, tail str))
-  | otherwise = getNumber s
-
-getNumber :: (Natural, String) -> Except ParseError (Annotated (Natural, String) String)
-getNumber (pos, str) =
-  let (f, s) = span Data.Char.isDigit str
-   in if null f
-        then Error (ErrorAtPos pos)
-        else
-          if null s || head s /= '.'
-            then Success (f :# (pos + len f, s))
-            else
-              let (f2, s2) = span Data.Char.isDigit (tail s)
-               in if null f2
-                    then Error (ErrorAtPos (pos + len f + 1))
-                    else Success (f ++ "." ++ f2 :# (pos + len f + 1 + len f2, s2))
-
---getText = undefined
+    c <- optional peekChar
+    case c of
+      (Just v) ->
+        if v `elem` ['+', '-', '*', '/', '(', ')']
+          then void pChar
+          else void pNumber
+      Nothing -> return ()
 
 parseE :: Parser Expr
 parseE =
@@ -140,24 +147,19 @@ parseE' left =
   do
     token <- curToken
     case token of
-      PLUS     -> do void nextToken; t <- parseT; e' <- parseE' t; return (left + e')
-      MINUS    -> do void nextToken; t <- parseT; e' <- parseE' t; return (left - e')
+      PLUS     -> do nextToken; t <- parseT; e' <- parseE' t; return (left + e')
+      MINUS    -> do nextToken; t <- parseT; e' <- parseE' t; return (left - e')
       END      -> return left
       CBRACKET -> return left
       _        -> parseError
-
-parseDouble :: String -> Double
-parseDouble str = let (f, s) = span Data.Char.isDigit str in let int = foldl (\acc x -> acc * 10 + x) 0 (map (int2Double . digitToInt) f) in
-  if null s then int
-  else let frac = foldr (\x acc -> (x + acc) / 10) 0 (map (int2Double . digitToInt) (tail s)) in int + frac
 
 parseF :: Parser Expr
 parseF =
   do
     token <- curToken
     case token of
-      NUMBER   -> Val . parseDouble <$> nextToken
-      OBRACKET -> do void nextToken; e <- parseE; void nextToken; return e
+      NUMBER   -> do val <- peekP pNumber; nextToken; return (Val val)
+      OBRACKET -> do nextToken; e <- parseE; nextToken; return e
       _        -> parseError
 
 parseT' :: Expr -> Parser Expr
@@ -165,8 +167,8 @@ parseT' left =
   do
     token <- curToken
     case token of
-      STAR     -> do void nextToken; f <- parseF; t' <- parseT' f; return (left * t')
-      SLASH    -> do void nextToken; f <- parseF; t' <- parseT' f; return (left / t')
+      STAR     -> do nextToken; f <- parseF; t' <- parseT' f; return (left * t')
+      SLASH    -> do nextToken; f <- parseF; t' <- parseT' f; return (left / t')
       END      -> return left
       CBRACKET -> return left
       PLUS     -> return left
@@ -174,4 +176,4 @@ parseT' left =
       _        -> parseError
 
 parseExpr :: String -> Except ParseError Expr
-parseExpr = runP parseE
+parseExpr = runP $ do pWhitespaces; parseE
