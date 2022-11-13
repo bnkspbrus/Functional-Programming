@@ -1,6 +1,27 @@
 {-# LANGUAGE TupleSections #-}
 
-module HW2.T2 where
+module HW2.T2
+  ( wrapOption,
+    wrapPair,
+    wrapQuad,
+    wrapAnnotated,
+    wrapExcept,
+    wrapPrioritised,
+    wrapStream,
+    wrapList,
+    wrapFun,
+    distOption,
+    distPair,
+    distQuad,
+    distAnnotated,
+    distExcept,
+    distPrioritised,
+    distStream,
+    distList,
+    distFun,
+    concatList
+  )
+where
 
 import HW2.T1
 

@@ -1,7 +1,15 @@
 {-# LANGUAGE DerivingStrategies         #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
-module HW2.T6 where
+module HW2.T6
+  ( ParseError (ErrorAtPos),
+    runP,
+    pChar,
+    parseError,
+    pEof,
+    parseExpr,
+  )
+where
 
 import Control.Applicative
 import Control.Monad (MonadPlus, guard, mfilter, void)
@@ -42,7 +50,7 @@ pInt = do
   return (parseInt int)
 
 parseInt :: String -> Int
-parseInt str =  foldl (\acc x -> acc * 10 + x) 0 (map digitToInt str)
+parseInt str = foldl (\acc x -> acc * 10 + x) 0 (map digitToInt str)
 
 pFrac :: Parser Double
 pFrac = do
@@ -87,9 +95,6 @@ pEof = P $
 -- T' -> empty
 -- F  -> (E)
 -- F  -> n
-
-len :: [a] -> Natural
-len = foldr (\_ acc -> acc + 1) 0
 
 pWhitespaces :: Parser ()
 pWhitespaces = void (many (mfilter isSpace pChar))

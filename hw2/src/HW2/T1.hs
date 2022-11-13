@@ -1,4 +1,26 @@
-module HW2.T1 where
+module HW2.T1
+  ( Option (..),
+    Pair (P),
+    Quad (Q),
+    Annotated ((:#)),
+    Except (..),
+    Prioritised (..),
+    Stream ((:>)),
+    List (..),
+    Fun (F),
+    Tree (..),
+    mapOption,
+    mapPair,
+    mapQuad,
+    mapAnnotated,
+    mapExcept,
+    mapPrioritised,
+    mapStream,
+    mapList,
+    mapFun,
+    mapTree,
+  )
+where
 
 data Option a = None | Some a
 
@@ -6,11 +28,11 @@ data Pair a = P a a
 
 data Quad a = Q a a a a
 
-data Annotated e a = a :# e deriving Show
+data Annotated e a = a :# e deriving (Show)
 
 infix 0 :#
 
-data Except e a = Error e | Success a deriving Show
+data Except e a = Error e | Success a deriving (Show)
 
 data Prioritised a = Low a | Medium a | High a
 

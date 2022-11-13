@@ -1,4 +1,15 @@
-module HW2.T4 where
+module HW2.T4
+  ( State (S),
+    mapState,
+    wrapState,
+    joinState,
+    modifyState,
+    Prim (..),
+    Expr (..),
+    eval,
+    runS,
+  )
+where
 
 import qualified Control.Monad (ap)
 import HW2.T1 (Annotated ((:#)), mapAnnotated)
@@ -6,7 +17,7 @@ import HW2.T1 (Annotated ((:#)), mapAnnotated)
 data State s a = S {runS :: s -> Annotated s a}
 
 mapState :: (a -> b) -> State s a -> State s b
-mapState f S {runS = rs} = S {runS = mapAnnotated f . rs}--let (a :# ns) = rs s in f a :# ns}
+mapState f S {runS = rs} = S {runS = mapAnnotated f . rs} --let (a :# ns) = rs s in f a :# ns}
 
 wrapState :: a -> State s a
 wrapState a = S {runS = (a :#)}
@@ -36,7 +47,7 @@ data Prim a
   | Sgn a -- signum
   deriving (Show)
 
-data Expr = Val Double | Op (Prim Expr) deriving Show
+data Expr = Val Double | Op (Prim Expr) deriving (Show)
 
 instance Num Expr where
   x + y = Op (Add x y)

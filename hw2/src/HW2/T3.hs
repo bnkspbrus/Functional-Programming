@@ -1,4 +1,11 @@
-module HW2.T3 where
+module HW2.T3
+  ( joinOption,
+    joinExcept,
+    joinAnnotated,
+    joinList,
+    joinFun,
+  )
+where
 
 import HW2.T1
 import HW2.T2 (concatList)

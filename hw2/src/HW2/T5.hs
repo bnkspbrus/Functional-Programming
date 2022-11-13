@@ -1,4 +1,15 @@
-module HW2.T5 where
+module HW2.T5
+  ( ExceptState (ES),
+    mapExceptState,
+    wrapExceptState,
+    joinExceptState,
+    modifyExceptState,
+    throwExceptState,
+    EvaluationError (DivideByZero),
+    eval,
+    runES
+  )
+where
 
 import qualified Control.Monad (ap)
 import HW2.T1 (Annotated ((:#)), Except (Error, Success), mapAnnotated, mapExcept)
