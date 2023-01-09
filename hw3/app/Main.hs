@@ -1,4 +1,4 @@
-module Main where
+module Main (main) where
 
 import Control.Monad.Cont (liftIO)
 import Data.Set (fromList)

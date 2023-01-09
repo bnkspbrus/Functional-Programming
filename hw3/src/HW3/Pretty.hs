@@ -1,9 +1,10 @@
-module HW3.Pretty where
+module HW3.Pretty (prettyValue) where
 
 --module HW3.Pretty (prettyValue) where
 
 import Data.ByteString (ByteString, unpack)
 import Data.Foldable (toList)
+import qualified Data.Map as M (toList)
 import Data.Scientific (floatingOrInteger, fromRationalRepetendUnlimited)
 import GHC.Real (Ratio ((:%)))
 import HW3.Base
@@ -11,6 +12,7 @@ import Numeric (showHex)
 import Prettyprinter
   ( Doc,
     Pretty,
+    colon,
     dquotes,
     encloseSep,
     list,
@@ -40,6 +42,13 @@ prettyValue (HiValueAction HiActionNow) = pretty "now"
 prettyValue (HiValueTime time) = pretty "parse-time" <> parens (pString $ show time)
 prettyValue (HiValueAction (HiActionRand x y)) = pretty "rand" <> randList [pretty x, pretty y]
 prettyValue (HiValueAction (HiActionEcho text)) = pretty "echo" <> parens (pString text)
+prettyValue (HiValueDict dict) = dictList $ map pPair $ M.toList dict
+
+pPair :: (HiValue, HiValue) -> Doc AnsiStyle
+pPair (key, val) = prettyValue key <+> colon <+> prettyValue val
+
+dictList :: [Doc AnsiStyle] -> Doc AnsiStyle
+dictList = encloseSep (pretty "{ ") (pretty " }") (pretty ", ")
 
 byteList :: [Doc AnsiStyle] -> Doc AnsiStyle
 byteList = encloseSep (pretty "[# ") (pretty " #]") space
@@ -95,6 +104,10 @@ prettyFunction HiFunChDir = pretty "cd"
 prettyFunction HiFunParseTime = pretty "parse-time"
 prettyFunction HiFunRand = pretty "rand"
 prettyFunction HiFunEcho = pretty "echo"
+prettyFunction HiFunCount = pretty "count"
+prettyFunction HiFunKeys = pretty "keys"
+prettyFunction HiFunValues = pretty "values"
+prettyFunction HiFunInvert = pretty "invert"
 
 prettyBool :: Bool -> Doc AnsiStyle
 prettyBool True = pretty "true"

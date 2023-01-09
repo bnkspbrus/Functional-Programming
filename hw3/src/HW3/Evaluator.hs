@@ -1,6 +1,6 @@
 {-# LANGUAGE LambdaCase #-}
 
-module HW3.Evaluator where
+module HW3.Evaluator(eval) where
 
 import Codec.Compression.Zlib
   ( bestCompression,
@@ -10,9 +10,21 @@ import Codec.Compression.Zlib
     defaultCompressParams,
   )
 import Codec.Serialise (deserialise, serialise)
-import Control.Monad.Except
+import Control.Monad (foldM)
+import Control.Monad.Except (ExceptT (ExceptT), runExceptT)
 import Data.Bifunctor (second)
 import qualified Data.ByteString as B
+  ( ByteString,
+    append,
+    drop,
+    foldr,
+    index,
+    length,
+    pack,
+    reverse,
+    take,
+    unpack,
+  )
 import Data.ByteString.Lazy (fromStrict, toStrict)
 import Data.Foldable (toList)
 import qualified Data.Map as M
@@ -266,6 +278,7 @@ apply (HiValueFunction HiFunLength) args =
     ( \case
         (HiValueString x) -> vnumber $ fromIntegral $ T.length x
         (HiValueList x) -> vnumber $ fromIntegral $ S.length x
+        (HiValueBytes x) -> vnumber $ fromIntegral $ B.length x
         _ -> invalidArgument
     )
     args
@@ -288,6 +301,7 @@ apply (HiValueFunction HiFunReverse) args =
     ( \case
         (HiValueString x) -> vstring $ T.reverse x
         (HiValueList x) -> vlist $ S.reverse x
+        (HiValueBytes x) -> vbytes $ B.reverse x
         _ -> invalidArgument
     )
     args

@@ -1,15 +1,24 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveGeneric #-}
 
-module HW3.Base where
+module HW3.Base
+  ( HiFun (..),
+    HiValue (..),
+    HiError (..),
+    HiAction (..),
+    HiExpr(..),
+    HiMonad,
+    runAction,
+  )
+where
 
 import Codec.Serialise (Serialise)
 import Data.ByteString (ByteString)
+import Data.Map (Map)
 import Data.Sequence (Seq)
 import Data.Text (Text)
 import Data.Time (UTCTime)
 import GHC.Generics (Generic)
-import Data.Map (Map)
 
 data HiFun
   = HiFunDiv

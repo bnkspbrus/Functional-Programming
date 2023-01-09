@@ -1,4 +1,4 @@
-module HW3.Action where
+module HW3.Action (HiPermission (..), PermissionException (PermissionRequired), HIO (HIO), runHIO) where
 
 import Control.Exception (Exception, throw)
 import Control.Monad.Cont (liftIO)

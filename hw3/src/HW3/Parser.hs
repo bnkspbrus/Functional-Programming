@@ -1,13 +1,25 @@
-module HW3.Parser where
+module HW3.Parser (parse) where
 
+import Control.Applicative (many, optional, (<|>))
 import Control.Monad (void)
-import Control.Monad.Combinators.Expr
-import qualified Data.ByteString as B
-import qualified Data.Text as T
+import Control.Monad.Combinators.Expr (Operator (..), makeExprParser)
+import qualified Data.ByteString as B (pack)
+import qualified Data.Text as T (Text, pack)
 import Data.Void (Void)
 import Data.Word (Word8)
 import HW3.Base
 import Text.Megaparsec
+  ( ParseErrorBundle,
+    Parsec,
+    between,
+    choice,
+    eof,
+    manyTill,
+    notFollowedBy,
+    runParser,
+    sepBy,
+    try,
+  )
 import Text.Megaparsec.Char
 import qualified Text.Megaparsec.Char.Lexer as L
 
