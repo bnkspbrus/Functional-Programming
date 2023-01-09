@@ -1,5 +1,6 @@
 module HW3.Parser where
 
+import Control.Monad (void)
 import Control.Monad.Combinators.Expr
 import qualified Data.ByteString as B
 import qualified Data.Text as T
@@ -54,7 +55,11 @@ funParser =
       HiFunChDir <$ string "cd",
       HiFunParseTime <$ string "parse-time",
       HiFunRand <$ string "rand",
-      HiFunEcho <$ string "echo"
+      HiFunEcho <$ string "echo",
+      HiFunCount <$ string "count",
+      HiFunKeys <$ string "keys",
+      HiFunValues <$ string "values",
+      HiFunInvert <$ string "invert"
     ]
 
 numberParser :: Parser HiValue
@@ -89,7 +94,6 @@ valueParser =
           cwdParser,
           nowParser
         ]
-      <|> hiListParser
 
 cwdParser :: Parser HiValue
 cwdParser = HiValueAction <$> (HiActionCwd <$ string "cwd")
@@ -97,19 +101,35 @@ cwdParser = HiValueAction <$> (HiActionCwd <$ string "cwd")
 nowParser :: Parser HiValue
 nowParser = HiValueAction <$> (HiActionNow <$ string "now")
 
+dictParser :: Parser HiExpr
+dictParser = HiExprDict <$> braces (pairParser `sepBy` symbol ",")
+
+pairParser :: Parser (HiExpr, HiExpr)
+pairParser = do
+  key <- operatorParser
+  void $ symbol ":"
+  val <- operatorParser
+  return (key, val)
+
+atomParser :: Parser HiExpr
+atomParser = valueParser <|> listParser <|> dictParser <|> parens operatorParser
+
 exprParser :: Parser HiExpr -- pTerm
 exprParser = do
-  fun <- valueParser
-  args <- many $ parens argsParser --char '(' *> space *> argsParser <* char ')'
+  fun <- atomParser
+  args <- many $ parens argsParser <|> dotParser
   sign <- optional $ symbol "!"
   return $
     let app = foldl HiExprApply fun args
      in case sign of
           (Just _) -> HiExprRun app
-          Nothing  -> app
+          Nothing -> app
 
 argsParser :: Parser [HiExpr]
 argsParser = L.lexeme space $ operatorParser `sepBy` symbol ","
+
+dotParser :: Parser [HiExpr]
+dotParser = L.lexeme space $ (: []) . HiExprValue . HiValueString . T.pack <$> (symbol "." *> many alphaNumChar)
 
 parens :: Parser a -> Parser a
 parens = between (symbol "(") (symbol ")")
@@ -117,14 +137,17 @@ parens = between (symbol "(") (symbol ")")
 brackets :: Parser a -> Parser a
 brackets = between (symbol "[") (symbol "]")
 
+braces :: Parser a -> Parser a
+braces = between (symbol "{") (symbol "}")
+
 hashes :: Parser a -> Parser a
 hashes = between (symbol "[#") (symbol "#]")
 
-hiListParser :: Parser HiExpr
-hiListParser = HiExprApply (HiExprValue $ HiValueFunction HiFunList) <$> brackets argsParser
+listParser :: Parser HiExpr
+listParser = HiExprApply (HiExprValue $ HiValueFunction HiFunList) <$> brackets argsParser
 
 termParser :: Parser HiExpr
-termParser = parens operatorParser <|> exprParser
+termParser = exprParser <|> parens operatorParser
 
 operators :: [[Operator Parser HiExpr]]
 operators =

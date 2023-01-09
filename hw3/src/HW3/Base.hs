@@ -1,5 +1,5 @@
 {-# LANGUAGE DeriveAnyClass #-}
-{-# LANGUAGE DeriveGeneric  #-}
+{-# LANGUAGE DeriveGeneric #-}
 
 module HW3.Base where
 
@@ -7,8 +7,9 @@ import Codec.Serialise (Serialise)
 import Data.ByteString (ByteString)
 import Data.Sequence (Seq)
 import Data.Text (Text)
-import GHC.Generics (Generic)
 import Data.Time (UTCTime)
+import GHC.Generics (Generic)
+import Data.Map (Map)
 
 data HiFun
   = HiFunDiv
@@ -48,6 +49,10 @@ data HiFun
   | HiFunEcho
   | HiFunIf
   | HiFunList
+  | HiFunCount
+  | HiFunKeys
+  | HiFunValues
+  | HiFunInvert
   deriving (Show, Eq, Ord, Generic, Serialise)
 
 data HiValue
@@ -60,12 +65,14 @@ data HiValue
   | HiValueBytes ByteString
   | HiValueAction HiAction
   | HiValueTime UTCTime
+  | HiValueDict (Map HiValue HiValue)
   deriving (Show, Eq, Ord, Generic, Serialise)
 
 data HiExpr
   = HiExprValue HiValue
   | HiExprApply HiExpr [HiExpr]
   | HiExprRun HiExpr
+  | HiExprDict [(HiExpr, HiExpr)]
   deriving (Show)
 
 data HiError

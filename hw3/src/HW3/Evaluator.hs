@@ -11,9 +11,24 @@ import Codec.Compression.Zlib
   )
 import Codec.Serialise (deserialise, serialise)
 import Control.Monad.Except
+import Data.Bifunctor (second)
 import qualified Data.ByteString as B
 import Data.ByteString.Lazy (fromStrict, toStrict)
 import Data.Foldable (toList)
+import qualified Data.Map as M
+  ( Map,
+    elems,
+    empty,
+    fromList,
+    fromListWith,
+    insertWith,
+    keys,
+    lookup,
+    map,
+    mapKeys,
+    toList,
+  )
+import Data.Maybe (fromMaybe)
 import qualified Data.Sequence as S
   ( Seq ((:<|)),
     cycleTaking,
@@ -23,6 +38,7 @@ import qualified Data.Sequence as S
     index,
     length,
     reverse,
+    singleton,
     take,
     (><),
   )
@@ -30,6 +46,7 @@ import qualified Data.Text as T
   ( Text,
     append,
     drop,
+    foldr,
     index,
     length,
     pack,
@@ -44,6 +61,7 @@ import qualified Data.Text as T
   )
 import Data.Text.Encoding (decodeUtf8', encodeUtf8)
 import Data.Time (UTCTime, addUTCTime, diffUTCTime)
+import Data.Tuple (swap)
 import GHC.Real (Ratio ((:%)), denominator, numerator)
 import GHC.Word (Word8)
 import HW3.Base
@@ -55,12 +73,19 @@ eval = runExceptT . evalExpr
 
 evalExpr :: HiMonad m => HiExpr -> ExceptT HiError m HiValue
 evalExpr (HiExprValue val) = return val
+evalExpr (HiExprDict list) = HiValueDict . M.fromList <$> mapM mapPair list
 evalExpr (HiExprApply fun args) = do
   eFun <- evalExpr fun
   apply eFun args
 evalExpr (HiExprRun expr) = do
   eExpr <- evalExpr expr
   runExpr eExpr
+
+mapPair :: HiMonad m => (HiExpr, HiExpr) -> ExceptT HiError m (HiValue, HiValue)
+mapPair (x, y) = do
+  x' <- evalExpr x
+  y' <- evalExpr y
+  return (x', y')
 
 runExpr :: HiMonad m => HiValue -> ExceptT HiError m HiValue
 runExpr (HiValueAction action) = ExceptT $ Right <$> runAction action
@@ -410,7 +435,56 @@ apply (HiValueFunction HiFunEcho) args =
         _ -> invalidArgument
     )
     args
+apply (HiValueFunction HiFunKeys) args =
+  unary
+    ( \case
+        (HiValueDict dict) -> vlist $ S.fromList $ M.keys dict
+        _ -> invalidArgument
+    )
+    args
+apply (HiValueFunction HiFunValues) args =
+  unary
+    ( \case
+        (HiValueDict dict) -> vlist $ S.fromList $ M.elems dict
+        _ -> invalidArgument
+    )
+    args
+apply (HiValueDict dict) args =
+  unary
+    ( return . fromMaybe HiValueNull . flip M.lookup dict
+    )
+    args
+apply (HiValueFunction HiFunCount) args =
+  unary
+    ( \case
+        (HiValueString text) ->
+          vdict $
+            M.mapKeys (HiValueString . T.singleton) $
+              M.map HiValueNumber $
+                T.foldr (flip (M.insertWith (+)) 1) M.empty text
+        (HiValueBytes str) ->
+          vdict $
+            M.mapKeys (HiValueNumber . toRational) $
+              M.map HiValueNumber $
+                B.foldr (flip (M.insertWith (+)) 1) M.empty str
+        (HiValueList list) ->
+          vdict $
+            M.map HiValueNumber $
+              foldr (flip (M.insertWith (+)) 1) M.empty list
+        _ -> invalidArgument
+    )
+    args
+apply (HiValueFunction HiFunInvert) args =
+  unary
+    ( \case
+        (HiValueDict dict) -> vdict $ M.map HiValueList $ M.fromListWith (S.><) $ map fswap $ M.toList dict
+        _ -> invalidArgument
+    )
+    args
 apply _ _ = ExceptT $ return $ Left HiErrorInvalidFunction
+
+fswap :: (HiValue, HiValue) -> (HiValue, S.Seq HiValue)
+fswap = second S.singleton . swap
 
 mapToWord8 :: Monad m => HiValue -> ExceptT HiError m Word8
 mapToWord8 (HiValueNumber (num :% 1))
@@ -440,3 +514,6 @@ vstring = return . HiValueString
 
 vbytes :: Monad m => B.ByteString -> ExceptT HiError m HiValue
 vbytes = return . HiValueBytes
+
+vdict :: Monad m => M.Map HiValue HiValue -> ExceptT HiError m HiValue
+vdict = return . HiValueDict
