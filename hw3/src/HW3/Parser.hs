@@ -18,10 +18,13 @@ import Text.Megaparsec
     notFollowedBy,
     runParser,
     sepBy,
-    try,
+    sepBy1,
+    try, 
+    satisfy,
   )
 import Text.Megaparsec.Char
 import qualified Text.Megaparsec.Char.Lexer as L
+import Data.Char (isAlphaNum, isAlpha)
 
 parse :: String -> Either (ParseErrorBundle String Void) HiExpr
 parse = runParser (between space eof operatorParser) ""
@@ -141,7 +144,10 @@ argsParser :: Parser [HiExpr]
 argsParser = L.lexeme space $ operatorParser `sepBy` symbol ","
 
 dotParser :: Parser [HiExpr]
-dotParser = L.lexeme space $ (: []) . HiExprValue . HiValueString . T.pack <$> (symbol "." *> many alphaNumChar)
+dotParser = L.lexeme space $ (: []) . HiExprValue . HiValueString . T.pack <$> (symbol "." *> idParser)
+
+idParser :: Parser [Char]
+idParser = concat <$> (((:) <$> satisfy isAlpha <*> many (satisfy isAlphaNum)) `sepBy1` char '-')
 
 parens :: Parser a -> Parser a
 parens = between (symbol "(") (symbol ")")

@@ -45,7 +45,7 @@ prettyValue (HiValueAction (HiActionEcho text)) = pretty "echo" <> parens (pStri
 prettyValue (HiValueDict dict) = dictList $ map pPair $ M.toList dict
 
 pPair :: (HiValue, HiValue) -> Doc AnsiStyle
-pPair (key, val) = prettyValue key <+> colon <+> prettyValue val
+pPair (key, val) = prettyValue key <> colon <+> prettyValue val
 
 dictList :: [Doc AnsiStyle] -> Doc AnsiStyle
 dictList = encloseSep (pretty "{ ") (pretty " }") (pretty ", ")
